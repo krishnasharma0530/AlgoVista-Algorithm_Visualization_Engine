@@ -1,4 +1,4 @@
-# AlgoVista WebAssembly App
+# AlgoVista
 
 This project keeps the file structure as small as possible while still working properly.
 
