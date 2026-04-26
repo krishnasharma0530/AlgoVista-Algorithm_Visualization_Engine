@@ -1,0 +1,116 @@
+<svg width="1400" height="980" viewBox="0 0 1400 980" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1400" y2="980" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1020"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0L10 5L0 10Z" fill="#94A3B8"/>
+    </marker>
+    <style>
+      .title { fill: #F8FAFC; font: 700 34px 'Segoe UI', Arial, sans-serif; letter-spacing: 1px; }
+      .subtitle { fill: #94A3B8; font: 500 16px 'Segoe UI', Arial, sans-serif; }
+      .box-title { fill: #F8FAFC; font: 700 24px 'Segoe UI', Arial, sans-serif; letter-spacing: 1px; }
+      .box-text { fill: #CBD5E1; font: 500 17px 'Segoe UI', Arial, sans-serif; }
+      .small { fill: #94A3B8; font: 500 15px 'Segoe UI', Arial, sans-serif; }
+      .legend { fill: #CBD5E1; font: 600 15px 'Segoe UI', Arial, sans-serif; }
+      .arrow-text { fill: #94A3B8; font: 600 14px 'Segoe UI', Arial, sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="980" fill="url(#bg)"/>
+
+  <text x="700" y="62" text-anchor="middle" class="title">AlgoVista - System Architecture</text>
+  <text x="700" y="92" text-anchor="middle" class="subtitle">C++ Algorithms + Emscripten + WebAssembly + Browser-based Visualization</text>
+
+  <g filter="url(#shadow)">
+    <rect x="430" y="130" rx="16" ry="16" width="540" height="110" fill="#1D4ED8" fill-opacity="0.22" stroke="#60A5FA" stroke-width="3"/>
+    <text x="700" y="175" text-anchor="middle" class="box-title">[ USER INPUT + WEB UI ]</text>
+    <text x="700" y="208" text-anchor="middle" class="box-text">HTML Form + Controls + Speed Slider + Playback Buttons</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="415" y="290" rx="16" ry="16" width="570" height="118" fill="#065F46" fill-opacity="0.24" stroke="#22C55E" stroke-width="3"/>
+    <text x="700" y="337" text-anchor="middle" class="box-title">[ JAVASCRIPT CONTROLLER ]</text>
+    <text x="700" y="371" text-anchor="middle" class="box-text">Reads input, calls exported Wasm functions, parses JSON steps</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="145" y="475" rx="16" ry="16" width="360" height="142" fill="#581C87" fill-opacity="0.26" stroke="#A855F7" stroke-width="3"/>
+    <text x="325" y="523" text-anchor="middle" class="box-title">[ ALGORITHM MODULE ]</text>
+    <text x="325" y="560" text-anchor="middle" class="box-text">Sorting: Bubble, Selection, Insertion,</text>
+    <text x="325" y="588" text-anchor="middle" class="box-text">Merge, Quick, Heap</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="520" y="475" rx="16" ry="16" width="360" height="142" fill="#0F766E" fill-opacity="0.24" stroke="#22D3EE" stroke-width="3"/>
+    <text x="700" y="523" text-anchor="middle" class="box-title">[ SEARCHING MODULE ]</text>
+    <text x="700" y="560" text-anchor="middle" class="box-text">Linear Search + Binary Search</text>
+    <text x="700" y="588" text-anchor="middle" class="box-text">Binary search uses sorted array steps</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="895" y="475" rx="16" ry="16" width="360" height="142" fill="#1E3A8A" fill-opacity="0.24" stroke="#60A5FA" stroke-width="3"/>
+    <text x="1075" y="523" text-anchor="middle" class="box-title">[ TREE MODULE ]</text>
+    <text x="1075" y="560" text-anchor="middle" class="box-text">AVL Tree Insertion</text>
+    <text x="1075" y="588" text-anchor="middle" class="box-text">Structured tree shape + node levels</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="370" y="690" rx="16" ry="16" width="660" height="142" fill="#7C2D12" fill-opacity="0.24" stroke="#FB923C" stroke-width="3"/>
+    <text x="700" y="738" text-anchor="middle" class="box-title">[ WEBASSEMBLY INTEGRATION ]</text>
+    <text x="700" y="775" text-anchor="middle" class="box-text">Emscripten compiles C++ to .wasm and generates JavaScript glue code</text>
+    <text x="700" y="803" text-anchor="middle" class="box-text">run_algorithm(...) returns JSON visualization steps to JavaScript</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="385" y="865" rx="16" ry="16" width="630" height="82" fill="#854D0E" fill-opacity="0.24" stroke="#FACC15" stroke-width="3"/>
+    <text x="700" y="912" text-anchor="middle" class="box-title">[ BROWSER VISUALIZATION OUTPUT ]</text>
+  </g>
+
+  <path d="M700 240V290" stroke="#94A3B8" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="718" y="270" class="arrow-text">user actions</text>
+
+  <path d="M590 408L375 475" stroke="#94A3B8" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="430" y="430" class="arrow-text">sort request</text>
+
+  <path d="M700 408V475" stroke="#94A3B8" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="720" y="447" class="arrow-text">search request</text>
+
+  <path d="M810 408L1025 475" stroke="#94A3B8" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="918" y="430" class="arrow-text">tree request</text>
+
+  <path d="M325 617L585 690" stroke="#94A3B8" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="430" y="650" class="arrow-text">step data</text>
+
+  <path d="M700 617V690" stroke="#94A3B8" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="717" y="655" class="arrow-text">step data</text>
+
+  <path d="M1075 617L815 690" stroke="#94A3B8" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="922" y="650" class="arrow-text">step data</text>
+
+  <path d="M700 832V865" stroke="#94A3B8" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="718" y="852" class="arrow-text">render</text>
+
+  <text x="700" y="954" text-anchor="middle" class="small">Bars for sorting/searching | Heap tree view | AVL tree with parent-child connector lines</text>
+
+  <g transform="translate(145,905)">
+    <rect x="0" y="0" width="22" height="22" rx="5" fill="#1D4ED8"/>
+    <text x="32" y="16" class="legend">UI Layer</text>
+
+    <rect x="145" y="0" width="22" height="22" rx="5" fill="#065F46"/>
+    <text x="177" y="16" class="legend">Controller Layer</text>
+
+    <rect x="355" y="0" width="22" height="22" rx="5" fill="#581C87"/>
+    <text x="387" y="16" class="legend">Algorithm Layer</text>
+
+    <rect x="565" y="0" width="22" height="22" rx="5" fill="#7C2D12"/>
+    <text x="597" y="16" class="legend">Wasm Layer</text>
+
+    <rect x="745" y="0" width="22" height="22" rx="5" fill="#854D0E"/>
+    <text x="777" y="16" class="legend">Output Layer</text>
+  </g>
+</svg>

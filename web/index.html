@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AlgoVista WebAssembly Visualizer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --panel: #111827;
+      --panel-soft: #1f2937;
+      --text: #e5eefc;
+      --muted: #94a3b8;
+      --border: #334155;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --compare: #fb7185;
+      --pivot: #a78bfa;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 26%),
+        linear-gradient(180deg, #020617 0%, #0f172a 100%);
+      color: var(--text);
+    }
+
+    .app-shell {
+      width: min(1200px, calc(100vw - 32px));
+      margin: 24px auto;
+      display: grid;
+      gap: 20px;
+      grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
+    }
+
+    .control-panel,
+    .visual-panel {
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 8px;
+      padding: 20px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 20px 50px rgba(2, 6, 23, 0.4);
+    }
+
+    .heading-block h1,
+    .visual-header h2 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: 0.9rem;
+    }
+
+    .subtitle,
+    .visual-header p,
+    .field small,
+    .label,
+    .tree-caption {
+      color: var(--muted);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field-wide {
+      grid-column: 1 / -1;
+    }
+
+    input,
+    select,
+    button {
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+    }
+
+    input,
+    select {
+      padding: 12px 14px;
+      width: 100%;
+    }
+
+    input[type="range"] {
+      padding: 0;
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button {
+      padding: 11px 16px;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: #64748b;
+    }
+
+    .primary-button {
+      background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+      border-color: transparent;
+      color: white;
+    }
+
+    .secondary-button {
+      background: var(--panel-soft);
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .status-card {
+      padding: 14px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      border-radius: 8px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .bars-container {
+      min-height: 420px;
+      padding: 18px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.82));
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      display: flex;
+      align-items: end;
+      gap: 12px;
+      overflow-x: auto;
+    }
+
+    .bar-wrapper {
+      min-width: 56px;
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+    }
+
+    .bar {
+      width: 56px;
+      min-height: 18px;
+      border-radius: 8px 8px 4px 4px;
+      background: linear-gradient(180deg, #22d3ee, #0891b2);
+      display: flex;
+      align-items: start;
+      justify-content: center;
+      padding-top: 8px;
+      color: white;
+      font-size: 0.78rem;
+      transition: height 0.24s ease, transform 0.24s ease, background 0.24s ease, box-shadow 0.24s ease;
+    }
+
+    .bar.current,
+    .tree-node.current {
+      background: linear-gradient(180deg, #fbbf24, #f59e0b);
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.22);
+    }
+
+    .bar.current {
+      transform: translateY(-8px);
+    }
+
+    .bar.compare,
+    .tree-node.compare {
+      background: linear-gradient(180deg, #fb7185, #e11d48);
+    }
+
+    .bar.found,
+    .tree-node.found {
+      background: linear-gradient(180deg, #4ade80, #16a34a);
+    }
+
+    .bar.pivot,
+    .tree-node.pivot {
+      background: linear-gradient(180deg, #c4b5fd, #8b5cf6);
+    }
+
+    .bar-label {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .tree-container {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      position: relative;
+      overflow-x: auto;
+    }
+
+    .tree-stage {
+      position: relative;
+      min-width: 720px;
+    }
+
+    .tree-lines {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .tree-line {
+      stroke: rgba(148, 163, 184, 0.9);
+      stroke-width: 0.45;
+    }
+
+    .tree-line.inactive {
+      stroke: rgba(34, 197, 94, 0.35);
+      stroke-dasharray: 1.6 1.2;
+    }
+
+    .tree-node {
+      position: absolute;
+      width: 62px;
+      height: 62px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, #38bdf8, #2563eb);
+      color: white;
+      font-weight: 700;
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      transform: translate(-50%, -50%);
+      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.24);
+      transition: transform 0.24s ease, background 0.24s ease, box-shadow 0.24s ease, opacity 0.24s ease;
+    }
+
+    .tree-node.inactive {
+      background: linear-gradient(180deg, rgba(34, 197, 94, 0.68), rgba(21, 128, 61, 0.78));
+      opacity: 0.72;
+    }
+
+    .tree-node-index {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .legend {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      color: var(--muted);
+    }
+
+    .legend-swatch {
+      width: 14px;
+      height: 14px;
+      display: inline-block;
+      border-radius: 4px;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    .legend-swatch.normal { background: #0891b2; }
+    .legend-swatch.current { background: var(--warning); }
+    .legend-swatch.compare { background: #e11d48; }
+    .legend-swatch.found { background: var(--success); }
+    .legend-swatch.pivot { background: #8b5cf6; }
+
+    .hidden { display: none; }
+
+    @media (max-width: 980px) {
+      .app-shell { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .app-shell {
+        width: min(100vw - 20px, 100%);
+        margin: 10px auto 24px;
+      }
+
+      .form-grid,
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bars-container {
+        min-height: 320px;
+      }
+
+      .bar-wrapper,
+      .bar {
+        min-width: 48px;
+        width: 48px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="control-panel">
+      <div class="heading-block">
+        <p class="eyebrow">WebAssembly + Emscripten Demo</p>
+        <h1>AlgoVista</h1>
+        <p class="subtitle">Run C++ algorithms in the browser and animate each step.</p>
+      </div>
+
+      <div class="form-grid">
+        <label class="field">
+          <span>Category</span>
+          <select id="category">
+            <option value="sorting">Sorting</option>
+            <option value="searching">Searching</option>
+            <option value="tree">AVL Tree</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Algorithm</span>
+          <select id="algorithm"></select>
+        </label>
+
+        <label class="field field-wide">
+          <span>Array Values</span>
+          <input id="valuesInput" type="text" value="9, 4, 7, 2, 6, 1" />
+        </label>
+
+        <label class="field" id="targetField">
+          <span>Search Target</span>
+          <input id="targetInput" type="number" value="7" />
+        </label>
+
+        <label class="field">
+          <span>Animation Speed</span>
+          <input id="speedInput" type="range" min="80" max="2000" step="20" value="280" />
+          <small id="speedLabel">280 ms per step</small>
+        </label>
+      </div>
+
+      <div class="action-row">
+        <button id="runButton" class="primary-button">Run Visualization</button>
+        <button id="playPauseButton" class="secondary-button">Pause</button>
+        <button id="stepButton" class="secondary-button">Next Step</button>
+        <button id="resetButton" class="secondary-button">Reset View</button>
+      </div>
+
+      <div class="status-grid">
+        <article class="status-card">
+          <span class="label">Current Step</span>
+          <strong id="stepCount">0 / 0</strong>
+        </article>
+        <article class="status-card">
+          <span class="label">Comparisons</span>
+          <strong id="comparisonsCount">0</strong>
+        </article>
+        <article class="status-card">
+          <span class="label">Swaps / Moves</span>
+          <strong id="swapsCount">0</strong>
+        </article>
+        <article class="status-card">
+          <span class="label">Search Result</span>
+          <strong id="resultText">Waiting to run</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="visual-panel">
+      <div class="visual-header">
+        <h2>Visualization</h2>
+        <p id="stepMessage">Load the WebAssembly module, enter values, and press Run Visualization.</p>
+      </div>
+
+      <div id="barsContainer" class="bars-container" aria-live="polite"></div>
+      <div id="treeContainer" class="tree-container hidden"></div>
+
+      <section class="legend">
+        <div><span class="legend-swatch normal"></span> Normal</div>
+        <div><span class="legend-swatch current"></span> Current</div>
+        <div><span class="legend-swatch compare"></span> Compared</div>
+        <div><span class="legend-swatch found"></span> Found</div>
+        <div><span class="legend-swatch pivot"></span> Pivot</div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    window.Module = window.Module || {};
+  </script>
+  <script src="./algovista.js"></script>
+  <script>
+    const categorySelect = document.getElementById("category");
+    const algorithmSelect = document.getElementById("algorithm");
+    const valuesInput = document.getElementById("valuesInput");
+    const targetInput = document.getElementById("targetInput");
+    const targetField = document.getElementById("targetField");
+    const speedInput = document.getElementById("speedInput");
+    const speedLabel = document.getElementById("speedLabel");
+    const runButton = document.getElementById("runButton");
+    const playPauseButton = document.getElementById("playPauseButton");
+    const stepButton = document.getElementById("stepButton");
+    const resetButton = document.getElementById("resetButton");
+    const barsContainer = document.getElementById("barsContainer");
+    const treeContainer = document.getElementById("treeContainer");
+    const stepMessage = document.getElementById("stepMessage");
+    const stepCount = document.getElementById("stepCount");
+    const comparisonsCount = document.getElementById("comparisonsCount");
+    const swapsCount = document.getElementById("swapsCount");
+    const resultText = document.getElementById("resultText");
+
+    const algorithmOptions = {
+      sorting: [
+        { value: "bubble", label: "Bubble Sort" },
+        { value: "selection", label: "Selection Sort" },
+        { value: "insertion", label: "Insertion Sort" },
+        { value: "merge", label: "Merge Sort" },
+        { value: "quick", label: "Quick Sort" },
+        { value: "heap", label: "Heap Sort" }
+      ],
+      searching: [
+        { value: "linear", label: "Linear Search" },
+        { value: "binary", label: "Binary Search" }
+      ],
+      tree: [
+        { value: "avl", label: "AVL Tree Insertion" }
+      ]
+    };
+
+    const state = {
+      currentRun: null,
+      currentStepIndex: 0,
+      timerId: null,
+      isPlaying: true
+    };
+
+    function populateAlgorithms() {
+      const category = categorySelect.value;
+      algorithmSelect.innerHTML = "";
+      for (const option of algorithmOptions[category]) {
+        const element = document.createElement("option");
+        element.value = option.value;
+        element.textContent = option.label;
+        algorithmSelect.appendChild(element);
+      }
+      targetField.classList.toggle("hidden", category !== "searching");
+    }
+
+    function parseValues() {
+      const raw = valuesInput.value.trim();
+      if (!raw) throw new Error("Please enter at least one number.");
+      const values = raw.split(",").map((part) => part.trim()).filter(Boolean).map((part) => Number(part));
+      if (values.some((value) => Number.isNaN(value))) {
+        throw new Error("Array values must be valid numbers separated by commas.");
+      }
+      return values;
+    }
+
+    function setStatusMessage(message, isError = false) {
+      stepMessage.textContent = message;
+      stepMessage.style.color = isError ? "#fca5a5" : "";
+    }
+
+    function clearPlaybackTimer() {
+      if (state.timerId) {
+        clearTimeout(state.timerId);
+        state.timerId = null;
+      }
+    }
+
+    function showBarsPanel() {
+      treeContainer.classList.add("hidden");
+      barsContainer.classList.remove("hidden");
+    }
+
+    function showTreePanel() {
+      barsContainer.classList.add("hidden");
+      treeContainer.classList.remove("hidden");
+    }
+
+    function renderBars(step) {
+      barsContainer.innerHTML = "";
+      showBarsPanel();
+      const values = step.array || [];
+      const maxValue = Math.max(...values, 1);
+      values.forEach((value, index) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "bar-wrapper";
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        bar.style.height = `${Math.max((value / maxValue) * 280, 18)}px`;
+        bar.textContent = value;
+        if (index === step.current) bar.classList.add("current");
+        if (index === step.secondary) bar.classList.add("compare");
+        if (index === step.found) bar.classList.add("found");
+        if (index === step.pivot) bar.classList.add("pivot");
+        const label = document.createElement("div");
+        label.className = "bar-label";
+        label.textContent = `i=${index}`;
+        wrapper.appendChild(bar);
+        wrapper.appendChild(label);
+        barsContainer.appendChild(wrapper);
+      });
+    }
+
+    function createTreeMarkup({ values, present, activeCount, step, title }) {
+      const totalNodes = values.length;
+      const levels = totalNodes > 0 ? Math.floor(Math.log2(totalNodes)) + 1 : 0;
+      const verticalGap = 92;
+      const topOffset = 42;
+      const stageHeight = Math.max(220, topOffset + levels * verticalGap);
+      treeContainer.innerHTML = "";
+      const caption = document.createElement("div");
+      caption.className = "tree-caption";
+      caption.textContent = title;
+      treeContainer.appendChild(caption);
+      const stage = document.createElement("div");
+      stage.className = "tree-stage";
+      stage.style.height = `${stageHeight}px`;
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "tree-lines");
+      svg.setAttribute("viewBox", `0 0 100 ${stageHeight}`);
+      svg.setAttribute("preserveAspectRatio", "none");
+
+      const positions = [];
+      for (let index = 0; index < totalNodes; index += 1) {
+        const level = Math.floor(Math.log2(index + 1));
+        const levelStart = 2 ** level - 1;
+        const slot = index - levelStart;
+        const slotsInLevel = 2 ** level;
+        positions.push({
+          x: ((slot + 0.5) / slotsInLevel) * 100,
+          y: topOffset + level * verticalGap
+        });
+      }
+
+      for (let index = 1; index < totalNodes; index += 1) {
+        if (!present[index]) continue;
+        const parent = Math.floor((index - 1) / 2);
+        if (!present[parent]) continue;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", String(positions[parent].x));
+        line.setAttribute("y1", String(positions[parent].y));
+        line.setAttribute("x2", String(positions[index].x));
+        line.setAttribute("y2", String(positions[index].y));
+        line.setAttribute("class", index >= activeCount ? "tree-line inactive" : "tree-line");
+        svg.appendChild(line);
+      }
+
+      stage.appendChild(svg);
+
+      for (let index = 0; index < totalNodes; index += 1) {
+        if (!present[index]) continue;
+        const node = document.createElement("div");
+        node.className = "tree-node";
+        node.style.left = `${positions[index].x}%`;
+        node.style.top = `${positions[index].y}px`;
+        node.textContent = values[index];
+        if (index === step.current) node.classList.add("current");
+        if (index === step.secondary) node.classList.add("compare");
+        if (index === step.found) node.classList.add("found");
+        if (index === step.pivot) node.classList.add("pivot");
+        if (index >= activeCount) node.classList.add("inactive");
+        const indexLabel = document.createElement("span");
+        indexLabel.className = "tree-node-index";
+        indexLabel.textContent = `i=${index}`;
+        node.appendChild(indexLabel);
+        stage.appendChild(node);
+      }
+
+      treeContainer.appendChild(stage);
+    }
+
+    function renderTree(step) {
+      showTreePanel();
+      if (!step.treePresent || step.treePresent.length === 0) {
+        treeContainer.textContent = "Tree is empty.";
+        return;
+      }
+      createTreeMarkup({
+        values: step.treeValues,
+        present: step.treePresent,
+        activeCount: Number.MAX_SAFE_INTEGER,
+        step,
+        title: "AVL tree structure"
+      });
+    }
+
+    function renderHeapTree(step) {
+      showTreePanel();
+      const values = step.array || [];
+      if (values.length === 0) {
+        treeContainer.textContent = "Heap is empty.";
+        return;
+      }
+      const activeCount = Number.isInteger(step.high) && step.high >= 0 ? Math.min(step.high + 1, values.length) : values.length;
+      createTreeMarkup({
+        values,
+        present: values.map(() => 1),
+        activeCount,
+        step,
+        title: "Heap view"
+      });
+    }
+
+    function updateSummary() {
+      const run = state.currentRun;
+      if (!run) {
+        stepCount.textContent = "0 / 0";
+        comparisonsCount.textContent = "0";
+        swapsCount.textContent = "0";
+        resultText.textContent = "Waiting to run";
+        return;
+      }
+      stepCount.textContent = `${Math.min(state.currentStepIndex + 1, run.steps.length)} / ${run.steps.length}`;
+      comparisonsCount.textContent = String(run.stats.comparisons);
+      swapsCount.textContent = String(run.stats.swaps);
+      if (run.category === "searching") {
+        resultText.textContent = run.resultIndex >= 0 ? `Found at index ${run.resultIndex}` : "Not found";
+      } else if (run.category === "sorting") {
+        resultText.textContent = `Final: ${run.finalArray.join(", ")}`;
+      } else {
+        resultText.textContent = "AVL insertion complete";
+      }
+    }
+
+    function renderCurrentStep() {
+      const run = state.currentRun;
+      if (!run || run.steps.length === 0) return;
+      const step = run.steps[state.currentStepIndex];
+      if (step.type === "tree") {
+        renderTree(step);
+      } else if (run.category === "sorting" && run.algorithm === "heap") {
+        renderHeapTree(step);
+      } else {
+        renderBars(step);
+      }
+      setStatusMessage(step.message || "Visualization step loaded.");
+      updateSummary();
+    }
+
+    function scheduleNextStep() {
+      clearPlaybackTimer();
+      if (!state.isPlaying || !state.currentRun) return;
+      if (state.currentStepIndex >= state.currentRun.steps.length - 1) {
+        playPauseButton.textContent = "Play";
+        state.isPlaying = false;
+        return;
+      }
+      state.timerId = setTimeout(() => {
+        state.currentStepIndex += 1;
+        renderCurrentStep();
+        scheduleNextStep();
+      }, Number(speedInput.value));
+    }
+
+    function playFromCurrentStep() {
+      if (!state.currentRun) return;
+      state.isPlaying = true;
+      playPauseButton.textContent = "Pause";
+      scheduleNextStep();
+    }
+
+    function pausePlayback() {
+      state.isPlaying = false;
+      playPauseButton.textContent = "Play";
+      clearPlaybackTimer();
+    }
+
+    function resetView() {
+      clearPlaybackTimer();
+      state.currentStepIndex = 0;
+      state.isPlaying = true;
+      playPauseButton.textContent = "Pause";
+      renderCurrentStep();
+      scheduleNextStep();
+    }
+
+    function runAlgorithmInWasm(category, algorithm, values, target) {
+      if (!Module || !Module.ccall) {
+        throw new Error("The WebAssembly module has not finished loading yet.");
+      }
+      const pointer = Module.ccall(
+        "run_algorithm",
+        "number",
+        ["string", "string", "string", "number"],
+        [category, algorithm, values.join(","), target]
+      );
+      const jsonText = Module.UTF8ToString(pointer);
+      Module.ccall("free_result", null, ["number"], [pointer]);
+      return JSON.parse(jsonText);
+    }
+
+    function onRunClick() {
+      try {
+        const values = parseValues();
+        const category = categorySelect.value;
+        const algorithm = algorithmSelect.value;
+        const target = Number(targetInput.value || 0);
+        const result = runAlgorithmInWasm(category, algorithm, values, target);
+        if (result.error) throw new Error(result.error);
+        state.currentRun = result;
+        state.currentStepIndex = 0;
+        state.isPlaying = true;
+        playPauseButton.textContent = "Pause";
+        renderCurrentStep();
+        scheduleNextStep();
+      } catch (error) {
+        pausePlayback();
+        setStatusMessage(error.message, true);
+        resultText.textContent = "Run failed";
+      }
+    }
+
+    categorySelect.addEventListener("change", populateAlgorithms);
+    speedInput.addEventListener("input", () => {
+      speedLabel.textContent = `${speedInput.value} ms per step`;
+      if (state.currentRun && state.isPlaying) scheduleNextStep();
+    });
+    runButton.addEventListener("click", onRunClick);
+    playPauseButton.addEventListener("click", () => {
+      if (!state.currentRun) return;
+      if (state.isPlaying) pausePlayback();
+      else playFromCurrentStep();
+    });
+    stepButton.addEventListener("click", () => {
+      if (!state.currentRun) return;
+      pausePlayback();
+      if (state.currentStepIndex < state.currentRun.steps.length - 1) {
+        state.currentStepIndex += 1;
+        renderCurrentStep();
+      }
+    });
+    resetButton.addEventListener("click", () => {
+      if (state.currentRun) resetView();
+    });
+
+    populateAlgorithms();
+    speedLabel.textContent = `${speedInput.value} ms per step`;
+    updateSummary();
+
+    window.Module = window.Module || {};
+    window.Module.onRuntimeInitialized = () => {
+      setStatusMessage("WebAssembly module loaded. Ready to visualize algorithms.");
+    };
+
+    if (window.Module && typeof window.Module.ccall === "function") {
+      setStatusMessage("WebAssembly module loaded. Ready to visualize algorithms.");
+    }
+  </script>
+</body>
+</html>
