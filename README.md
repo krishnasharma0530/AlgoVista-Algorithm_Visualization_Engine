@@ -1,6 +1,10 @@
 # AlgoVista
 
-This project keeps the file structure as small as possible while still working properly.
+# TEAM MEMBERS
+->Krishna Sharma
+->Siddhant Thapa
+->Shubham Sajwan
+
 
 ## Minimal Project Structure
 
